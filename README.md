@@ -29,7 +29,7 @@ Ardından telefonda `http://<bilgisayarın-yerel-ip-adresi>:8080` adresini açı
 
 ## Docker ile Yayınlama
 
-Proje `nginx:alpine` tabanlı küçük bir imaj olarak paketlenir.
+Proje `nginx:alpine` tabanlı küçük bir imaj (varsayılan port: `4519`) olarak paketlenir.
 
 ```
 git clone https://github.com/engnturker/carpim-tablosu.git
@@ -37,7 +37,7 @@ cd carpim-tablosu
 docker compose up -d --build
 ```
 
-Uygulama sunucuda `8081` portunda çalışır (`docker-compose.yml` içinden değiştirilebilir). Bir alan adının arkasında yayınlamak için mevcut nginx reverse proxy'ye şu şekilde bir blok eklenebilir:
+Uygulama sunucuda `4519` portunda çalışır (`docker-compose.yml` içinden değiştirilebilir). Bir alan adının arkasında yayınlamak için mevcut nginx reverse proxy'ye şu şekilde bir blok eklenebilir:
 
 ```
 server {
@@ -45,7 +45,7 @@ server {
     server_name ct.engntrkr.com;
 
     location / {
-        proxy_pass http://127.0.0.1:8081;
+        proxy_pass http://127.0.0.1:4519;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -53,7 +53,7 @@ server {
 }
 ```
 
-Proxy da bir konteyner içindeyse `127.0.0.1` yerine konteyner adı (`carpim-tablosu:80`) kullanın ve iki konteyneri aynı Docker ağına bağlayın.
+Proxy da bir konteyner içindeyse `127.0.0.1` yerine konteyner adı (`carpim-tablosu:4519`) kullanın ve iki konteyneri aynı Docker ağına bağlayın.
 
 ## Teknik Notlar
 

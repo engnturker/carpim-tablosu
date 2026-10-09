@@ -5,4 +5,4 @@ services:
     container_name: carpim-tablosu
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - "4519:4519"
