@@ -27,6 +27,34 @@ Ardından telefonda `http://<bilgisayarın-yerel-ip-adresi>:8080` adresini açı
 - **Sayaç:** Doğru, yanlış ve toplam soru sayısı üst barda gösterilir.
 - **Mobil uyumlu:** Telefonda dikey ve yatay kullanıma uygundur. Ekran genişliğine göre sütun sayısı değişir (10 / 8 / 6 / 4 / 3), dokunmatik ekranlarda butonlar büyür, sayısal klavye açılır.
 
+## Docker ile Yayınlama
+
+Proje `nginx:alpine` tabanlı küçük bir imaj olarak paketlenir.
+
+```
+git clone https://github.com/engnturker/carpim-tablosu.git
+cd carpim-tablosu
+docker compose up -d --build
+```
+
+Uygulama sunucuda `8081` portunda çalışır (`docker-compose.yml` içinden değiştirilebilir). Bir alan adının arkasında yayınlamak için mevcut nginx reverse proxy'ye şu şekilde bir blok eklenebilir:
+
+```
+server {
+    listen 80;
+    server_name ct.engntrkr.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Proxy da bir konteyner içindeyse `127.0.0.1` yerine konteyner adı (`carpim-tablosu:80`) kullanın ve iki konteyneri aynı Docker ağına bağlayın.
+
 ## Teknik Notlar
 
 - Saf HTML, CSS ve JavaScript; harici kütüphane yoktur.

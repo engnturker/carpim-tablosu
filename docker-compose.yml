@@ -1,0 +1,8 @@
+services:
+  carpim-tablosu:
+    build: .
+    image: carpim-tablosu
+    container_name: carpim-tablosu
+    restart: unless-stopped
+    ports:
+      - "8081:80"
