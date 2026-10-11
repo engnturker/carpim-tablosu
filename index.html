@@ -21,7 +21,9 @@
   .nums { display: flex; flex-wrap: wrap; gap: 6px; }
   .nums button { min-width: 42px; font-weight: 600; }
   .nums button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
-  #score { margin-left: auto; color: var(--muted); font-weight: 600; }
+  #scoreWrap { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  #score { color: var(--muted); font-weight: 600; }
+  #trophyBar { font-weight: 700; color: #b45309; font-size: 14px; white-space: nowrap; }
   #msg { padding: 40px 16px; text-align: center; color: var(--muted); font-size: 18px; }
   #grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; padding: 10px; }
   .q { display: flex; align-items: center; gap: 2px; background: var(--card); border: 1px solid var(--border);
@@ -35,7 +37,7 @@
   @media (max-width: 1400px) { #grid { grid-template-columns: repeat(8, 1fr); } }
   @media (max-width: 1100px) { #grid { grid-template-columns: repeat(6, 1fr); } }
   @media (max-width: 800px) { #grid { grid-template-columns: repeat(4, 1fr); } }
-  @media (max-width: 560px) { #grid { grid-template-columns: repeat(3, 1fr); } #score { margin-left: 0; } }
+  @media (max-width: 560px) { #grid { grid-template-columns: repeat(3, 1fr); } #scoreWrap { margin-left: 0; align-items: flex-start; } }
   button { touch-action: manipulation; }
   .q input { font-size: 16px; }
   @media (pointer: coarse) {
@@ -47,14 +49,30 @@
     header { gap: 8px; padding: 8px 10px; position: static; }
     h1 { width: 100%; font-size: 18px; margin: 0; }
     .nums { width: 100%; order: 3; }
-    #score { width: 100%; order: 4; font-size: 14px; }
+    #scoreWrap { width: 100%; order: 4; font-size: 14px; align-items: flex-start; }
   }
   @media (max-height: 500px) {
     header { position: static; padding: 6px 10px; gap: 8px; }
     h1 { font-size: 16px; }
     .nums { flex: 1 1 auto; flex-wrap: nowrap; overflow-x: auto; }
-    #score { margin-left: 0; font-size: 14px; }
+    #scoreWrap { margin-left: 0; font-size: 14px; }
   }
+
+  #celebration { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 16px; z-index: 50; pointer-events: none; opacity: 0; transition: opacity .25s; }
+  #celebration.show { opacity: 1; }
+  #trophyBig { font-size: 140px; line-height: 1; filter: drop-shadow(0 0 25px gold); transform: scale(0); }
+  #celebration.show #trophyBig { animation: trophyPop .6s ease-out forwards, trophyBounce 1s ease-in-out .6s infinite; }
+  @keyframes trophyPop {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.2) rotate(8deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  @keyframes trophyBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+  #celebrationText { font-size: 26px; font-weight: 800; color: #b45309; background: rgba(255,255,255,.92);
+    padding: 8px 22px; border-radius: 999px; box-shadow: 0 4px 20px rgba(0,0,0,.15); white-space: nowrap; }
+  #fireworksCanvas { position: fixed; inset: 0; z-index: 49; pointer-events: none; display: none; }
+  #fireworksCanvas.show { display: block; }
 </style>
 </head>
 <body>
@@ -63,18 +81,31 @@
   <button id="newBtn">Yeni Çalışma</button>
   <div class="nums" id="nums"></div>
   <button id="allBtn">Hepsi</button>
-  <div id="score"></div>
+  <div id="scoreWrap">
+    <div id="score"></div>
+    <div id="trophyBar">🏆 <span id="trophyCount">0</span> kupa · <span id="trophyProgress">0/20</span></div>
+  </div>
 </header>
 <div id="msg"></div>
 <main id="grid"></main>
 
+<div id="celebration">
+  <div id="trophyBig">🏆</div>
+  <div id="celebrationText"></div>
+</div>
+<canvas id="fireworksCanvas"></canvas>
+
 <script>
 const COUNT = 200;
+const TROPHY_STEP = 20;
 const selected = new Set();
 const numsEl = document.getElementById('nums');
 const gridEl = document.getElementById('grid');
 const msgEl = document.getElementById('msg');
 const scoreEl = document.getElementById('score');
+const trophyCountEl = document.getElementById('trophyCount');
+const trophyProgressEl = document.getElementById('trophyProgress');
+let wonTrophies = 0;
 
 for (let n = 1; n <= 10; n++) {
   const b = document.createElement('button');
@@ -114,10 +145,20 @@ function updateScore() {
   const ok = gridEl.querySelectorAll('.q.ok').length;
   const bad = gridEl.querySelectorAll('.q.bad').length;
   scoreEl.textContent = gridEl.children.length ? `Doğru: ${ok}  |  Yanlış: ${bad}  |  Toplam: ${gridEl.children.length}` : '';
+
+  const reachedTrophies = Math.floor(ok / TROPHY_STEP);
+  if (reachedTrophies > wonTrophies) {
+    wonTrophies = reachedTrophies;
+    celebrate(wonTrophies);
+  }
+  trophyCountEl.textContent = wonTrophies;
+  const progress = Math.min(Math.max(ok - wonTrophies * TROPHY_STEP, 0), TROPHY_STEP);
+  trophyProgressEl.textContent = `${progress}/${TROPHY_STEP}`;
 }
 
 function build() {
   gridEl.innerHTML = '';
+  wonTrophies = 0;
   if (!selected.size) { msgEl.textContent = 'Başlamak için yukarıdan bir veya daha fazla sayı seçin.'; msgEl.hidden = false; updateScore(); return; }
   msgEl.hidden = true;
   const frag = document.createDocumentFragment();
@@ -150,6 +191,89 @@ function build() {
 }
 
 build();
+
+/* --- Kupa kutlaması + havai fişek animasyonu --- */
+const celebrationEl = document.getElementById('celebration');
+const celebrationTextEl = document.getElementById('celebrationText');
+const fwCanvas = document.getElementById('fireworksCanvas');
+const fwCtx = fwCanvas.getContext('2d');
+let fwParticles = [];
+let fwRunning = false;
+let fwLaunchTimer = null;
+let fwStopTimer = null;
+
+function fwResize() { fwCanvas.width = window.innerWidth; fwCanvas.height = window.innerHeight; }
+window.addEventListener('resize', fwResize);
+
+function fwRandom(min, max) { return Math.random() * (max - min) + min; }
+
+function fwLaunch() {
+  const x = fwRandom(fwCanvas.width * 0.15, fwCanvas.width * 0.85);
+  const y = fwRandom(fwCanvas.height * 0.15, fwCanvas.height * 0.5);
+  const hue = Math.floor(fwRandom(0, 360));
+  const count = 50;
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + fwRandom(-0.15, 0.15);
+    const speed = fwRandom(2, 6);
+    fwParticles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      decay: fwRandom(0.012, 0.02),
+      hue,
+      size: fwRandom(2, 3.5),
+    });
+  }
+}
+
+function fwStep() {
+  fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+  fwParticles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.05; p.vx *= 0.98; p.vy *= 0.99;
+    p.life -= p.decay;
+  });
+  fwParticles = fwParticles.filter(p => p.life > 0);
+  fwCtx.globalCompositeOperation = 'lighter';
+  fwParticles.forEach(p => {
+    fwCtx.beginPath();
+    fwCtx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${Math.max(p.life, 0)})`;
+    fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    fwCtx.fill();
+  });
+  if (fwRunning) requestAnimationFrame(fwStep);
+}
+
+function startFireworks(duration) {
+  fwResize();
+  fwParticles = [];
+  fwCanvas.classList.add('show');
+  fwRunning = true;
+  fwLaunch();
+  clearInterval(fwLaunchTimer);
+  fwLaunchTimer = setInterval(fwLaunch, 450);
+  requestAnimationFrame(fwStep);
+  clearTimeout(fwStopTimer);
+  fwStopTimer = setTimeout(stopFireworks, duration);
+}
+
+function stopFireworks() {
+  fwRunning = false;
+  clearInterval(fwLaunchTimer);
+  fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+  fwCanvas.classList.remove('show');
+}
+
+function celebrate(n) {
+  celebrationTextEl.textContent = `🎉 ${n}. Kupan Kazanıldı! 🎉`;
+  celebrationEl.classList.remove('show');
+  // reflow ile animasyonu sıfırdan tetikle (üst üste kupa kazanımında da çalışsın)
+  void celebrationEl.offsetWidth;
+  celebrationEl.classList.add('show');
+  startFireworks(10000);
+  setTimeout(() => celebrationEl.classList.remove('show'), 10000);
+}
 </script>
 </body>
 </html>
