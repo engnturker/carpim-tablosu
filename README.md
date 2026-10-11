@@ -25,6 +25,7 @@ Ardından telefonda `http://<bilgisayarın-yerel-ip-adresi>:8080` adresini açı
 - **Anında geri bildirim:** Doğru cevapta yeşil ✓, yanlış cevapta kırmızı ✗ görünür. Yanlış cevap silinip yeniden yazılabilir.
 - **Serbest sıra:** İstenen soru tıklanıp cevaplanabilir; doğru cevaptan sonra imleç otomatik olarak sonraki kutuya geçer (Enter ile de geçilir).
 - **Sayaç:** Doğru, yanlış ve toplam soru sayısı üst barda gösterilir.
+- **Kupa sistemi:** Her 20 doğru cevapta bir kupa kazanılır. Üst bardaki kupa bölümü kazanılan toplam kupa sayısını ve sonraki kupaya olan ilerlemeyi (`x/20`) gösterir. Kupa kazanıldığında ekranda 10 saniye süren büyük bir kupa görseli ve havai fişek animasyonu belirir. Kupa sayısı **Yeni Çalışma** ile sıfırlanır.
 - **Mobil uyumlu:** Telefonda dikey ve yatay kullanıma uygundur. Ekran genişliğine göre sütun sayısı değişir (10 / 8 / 6 / 4 / 3), dokunmatik ekranlarda butonlar büyür, sayısal klavye açılır.
 
 ## Docker ile Yayınlama
@@ -58,4 +59,5 @@ Proxy da bir konteyner içindeyse `127.0.0.1` yerine konteyner adı (`carpim-tab
 ## Teknik Notlar
 
 - Saf HTML, CSS ve JavaScript; harici kütüphane yoktur.
-- Cevaplar kaydedilmez; sayfa yenilendiğinde veya **Yeni Çalışma**'ya basıldığında sıfırlanır.
+- Cevaplar ve kupa sayısı kaydedilmez; sayfa yenilendiğinde veya **Yeni Çalışma**'ya basıldığında sıfırlanır.
+- Kupa ve havai fişek animasyonu harici kütüphane kullanılmadan, düz `<canvas>` ile çizilir.
